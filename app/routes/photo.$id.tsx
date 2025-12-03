@@ -2,7 +2,7 @@ import { useParams } from "react-router";
 import type { Route } from "./+types/photo.$id";
 import { Button } from "~/components/ui/button";
 
-export function meta({ params }: Route.MetaArgs) {
+export function meta() {
   return [
     { title: "Your Photo Strip | Snap & Go" },
     { name: "description", content: "Download your photobooth photo strip" },

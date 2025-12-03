@@ -21,9 +21,15 @@ type SelectorState = {
 type SelectorAction =
   | { type: 'SELECT'; id: string }
   | { type: 'HOVER'; id: string | null }
-  | { type: 'FILTER'; orientation: SelectorState['orientationFilter'] };
+  | {
+      type: 'FILTER';
+      orientation: SelectorState['orientationFilter'];
+    };
 
-function selectorReducer(state: SelectorState, action: SelectorAction): SelectorState {
+function selectorReducer(
+  state: SelectorState,
+  action: SelectorAction,
+): SelectorState {
   switch (action.type) {
     case 'SELECT':
       return { ...state, selectedId: action.id };
@@ -36,8 +42,13 @@ function selectorReducer(state: SelectorState, action: SelectorAction): Selector
   }
 }
 
-export function IdleView({ onStart, onSelectFrame, selectedFrameId }: IdleViewProps) {
-  const [cameraStatus, setCameraStatus] = useState<CameraStatus>('checking');
+export function IdleView({
+  onStart,
+  onSelectFrame,
+  selectedFrameId,
+}: IdleViewProps) {
+  const [cameraStatus, setCameraStatus] =
+    useState<CameraStatus>('checking');
 
   const [selectorState, dispatch] = useReducer(selectorReducer, {
     selectedId: selectedFrameId,
@@ -51,7 +62,7 @@ export function IdleView({ onStart, onSelectFrame, selectedFrameId }: IdleViewPr
   const frames = getAllFrames().filter(
     (frame) =>
       selectorState.orientationFilter === 'all' ||
-      frame.orientation === selectorState.orientationFilter
+      frame.orientation === selectorState.orientationFilter,
   );
 
   const handleFrameSelect = (frameId: string) => {
@@ -75,7 +86,9 @@ export function IdleView({ onStart, onSelectFrame, selectedFrameId }: IdleViewPr
 
         if (error instanceof Error) {
           if (error.name === 'NotAllowedError') {
-            setErrorMessage('Camera permission denied. Please allow camera access.');
+            setErrorMessage(
+              'Camera permission denied. Please allow camera access.',
+            );
           } else if (error.name === 'NotFoundError') {
             setErrorMessage('No camera found on this device.');
           } else {
@@ -101,7 +114,9 @@ export function IdleView({ onStart, onSelectFrame, selectedFrameId }: IdleViewPr
     } catch (error) {
       setCameraStatus('denied');
       if (error instanceof Error) {
-        setErrorMessage('Camera permission denied. Please check browser settings.');
+        setErrorMessage(
+          'Camera permission denied. Please check browser settings.',
+        );
       }
     }
   };
@@ -149,42 +164,52 @@ export function IdleView({ onStart, onSelectFrame, selectedFrameId }: IdleViewPr
 
         {/* Frame Selection Section */}
         <div className="mt-8 space-y-4 max-w-5xl mx-auto">
-          <h2 className="text-3xl font-semibold">Choose Your Frame</h2>
+          <h2 className="text-3xl font-semibold">
+            Choose Your Frame
+          </h2>
 
           {/* Orientation Filter */}
           <div className="flex justify-center gap-2">
-            {(['all', 'vertical', 'horizontal'] as const).map((filter) => (
-              <Button
-                key={filter}
-                variant="outline"
-                size="sm"
-                onClick={() => dispatch({ type: 'FILTER', orientation: filter })}
-                className={cn(
-                  'capitalize border-2 transition-all',
-                  selectorState.orientationFilter === filter
-                    ? 'bg-white text-purple-600 border-white hover:bg-white'
-                    : 'bg-transparent text-white border-white/50 hover:bg-white/20 hover:border-white'
-                )}
-              >
-                {filter}
-              </Button>
-            ))}
+            {(['all', 'vertical', 'horizontal'] as const).map(
+              (filter) => (
+                <Button
+                  key={filter}
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    dispatch({ type: 'FILTER', orientation: filter })
+                  }
+                  className={cn(
+                    'capitalize border-2 transition-all',
+                    selectorState.orientationFilter === filter
+                      ? 'bg-white text-purple-600 border-white hover:bg-white'
+                      : 'bg-transparent text-white border-white/50 hover:bg-white/20 hover:border-white',
+                  )}
+                >
+                  {filter}
+                </Button>
+              ),
+            )}
           </div>
 
           {/* Frame Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
+          <div className="grid grid-cols-4 gap-3 mt-6">
             {frames.map((frame) => (
               <button
                 key={frame.id}
                 onClick={() => handleFrameSelect(frame.id)}
-                onMouseEnter={() => dispatch({ type: 'HOVER', id: frame.id })}
-                onMouseLeave={() => dispatch({ type: 'HOVER', id: null })}
+                onMouseEnter={() =>
+                  dispatch({ type: 'HOVER', id: frame.id })
+                }
+                onMouseLeave={() =>
+                  dispatch({ type: 'HOVER', id: null })
+                }
                 className={cn(
-                  'relative p-2 rounded-lg border-4 transition-all duration-200',
+                  'relative p-1.5 rounded-lg border-2 transition-all duration-200',
                   'hover:scale-105 hover:shadow-xl',
                   selectorState.selectedId === frame.id
                     ? 'border-yellow-400 bg-white/20 shadow-2xl'
-                    : 'border-white/30 bg-white/10'
+                    : 'border-white/30 bg-white/10',
                 )}
               >
                 {/* Frame Preview */}
@@ -197,13 +222,17 @@ export function IdleView({ onStart, onSelectFrame, selectedFrameId }: IdleViewPr
                 </div>
 
                 {/* Frame Name */}
-                <p className="mt-2 text-sm font-medium">{frame.name}</p>
+                <p className="mt-1 text-xs font-medium">
+                  {frame.name}
+                </p>
 
                 {/* Orientation Badge */}
                 <span
                   className={cn(
-                    'absolute top-4 right-4 px-2 py-1 text-xs rounded-full font-semibold',
-                    frame.orientation === 'vertical' ? 'bg-blue-500' : 'bg-purple-500'
+                    'absolute top-2 right-2 px-1.5 py-0.5 text-[10px] rounded-full font-semibold',
+                    frame.orientation === 'vertical'
+                      ? 'bg-blue-500'
+                      : 'bg-purple-500',
                   )}
                 >
                   {frame.orientation === 'vertical' ? '↕' : '↔'}
@@ -211,7 +240,7 @@ export function IdleView({ onStart, onSelectFrame, selectedFrameId }: IdleViewPr
 
                 {/* Selected Indicator */}
                 {selectorState.selectedId === frame.id && (
-                  <div className="absolute top-2 left-2 text-2xl bg-yellow-400 rounded-full w-8 h-8 flex items-center justify-center text-purple-600">
+                  <div className="absolute top-1 left-1 text-lg bg-yellow-400 rounded-full w-6 h-6 flex items-center justify-center text-purple-600">
                     ✓
                   </div>
                 )}

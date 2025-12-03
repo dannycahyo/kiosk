@@ -41,7 +41,7 @@ export function BoothContainer() {
           };
           return await uploadToCloudinary(blob, cloudName, uploadPreset);
         }),
-      },
+      }
     })
   );
 
