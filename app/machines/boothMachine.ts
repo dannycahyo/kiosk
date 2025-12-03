@@ -1,4 +1,5 @@
 import { assign, createMachine, fromPromise } from 'xstate';
+import { getDefaultFrame, getFrameById, type FrameConfig } from '~/lib/frame-config';
 
 export interface BoothContext {
   images: string[]; // base64 data URLs
@@ -9,6 +10,7 @@ export interface BoothContext {
   error: string | null;
   countdown: number; // 3, 2, 1 for UI display
   uploadRetries: number; // Track retry attempts
+  selectedFrameId: string; // Selected frame config ID
 }
 
 export type BoothEvent =
@@ -22,7 +24,8 @@ export type BoothEvent =
   | { type: 'UPLOAD_DONE'; url: string; publicId: string }
   | { type: 'UPLOAD_ERROR'; error: string }
   | { type: 'RETRY' }
-  | { type: 'RESET' };
+  | { type: 'RESET' }
+  | { type: 'SELECT_FRAME'; frameId: string };
 
 // Service types for invoked actors
 export interface CountdownInput {
@@ -31,7 +34,7 @@ export interface CountdownInput {
 
 export interface StitchInput {
   images: string[];
-  frameUrl: string;
+  frameConfig: FrameConfig; // Changed from frameUrl
 }
 
 export interface UploadInput {
@@ -57,6 +60,7 @@ export const boothMachine = createMachine(
       error: null,
       countdown: 3,
       uploadRetries: 0,
+      selectedFrameId: getDefaultFrame().id,
     },
     states: {
       idle: {
@@ -69,9 +73,15 @@ export const boothMachine = createMachine(
           error: null,
           countdown: 3,
           uploadRetries: 0,
+          selectedFrameId: getDefaultFrame().id,
         }),
         on: {
           START: 'countdown',
+          SELECT_FRAME: {
+            actions: assign({
+              selectedFrameId: ({ event }) => event.frameId,
+            }),
+          },
         },
       },
 
@@ -134,10 +144,16 @@ export const boothMachine = createMachine(
         invoke: {
           id: 'stitchService',
           src: 'stitchPhotos', // Will be provided at runtime
-          input: ({ context }) => ({
-            images: context.images,
-            frameUrl: '/assets/frame.svg',
-          }),
+          input: ({ context }) => {
+            const frameConfig = getFrameById(context.selectedFrameId);
+            if (!frameConfig) {
+              throw new Error(`Frame not found: ${context.selectedFrameId}`);
+            }
+            return {
+              images: context.images,
+              frameConfig,
+            };
+          },
           onDone: {
             target: 'uploading',
             actions: assign({

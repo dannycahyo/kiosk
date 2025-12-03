@@ -1,15 +1,63 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useReducer } from 'react';
 import { Button } from '~/components/ui/button';
+import { getAllFrames } from '~/lib/frame-config';
+import { cn } from '~/lib/utils';
 
 interface IdleViewProps {
   onStart: () => void;
+  onSelectFrame: (frameId: string) => void;
+  selectedFrameId: string;
 }
 
 type CameraStatus = 'checking' | 'granted' | 'denied' | 'error';
 
-export function IdleView({ onStart }: IdleViewProps) {
+// Frame selector state management using useReducer
+type SelectorState = {
+  selectedId: string;
+  hoveredId: string | null;
+  orientationFilter: 'all' | 'vertical' | 'horizontal';
+};
+
+type SelectorAction =
+  | { type: 'SELECT'; id: string }
+  | { type: 'HOVER'; id: string | null }
+  | { type: 'FILTER'; orientation: SelectorState['orientationFilter'] };
+
+function selectorReducer(state: SelectorState, action: SelectorAction): SelectorState {
+  switch (action.type) {
+    case 'SELECT':
+      return { ...state, selectedId: action.id };
+    case 'HOVER':
+      return { ...state, hoveredId: action.id };
+    case 'FILTER':
+      return { ...state, orientationFilter: action.orientation };
+    default:
+      return state;
+  }
+}
+
+export function IdleView({ onStart, onSelectFrame, selectedFrameId }: IdleViewProps) {
   const [cameraStatus, setCameraStatus] = useState<CameraStatus>('checking');
+
+  const [selectorState, dispatch] = useReducer(selectorReducer, {
+    selectedId: selectedFrameId,
+    hoveredId: null,
+    orientationFilter: 'all',
+  });
+
   const [errorMessage, setErrorMessage] = useState<string>('');
+
+  // Filter frames based on orientation
+  const frames = getAllFrames().filter(
+    (frame) =>
+      selectorState.orientationFilter === 'all' ||
+      frame.orientation === selectorState.orientationFilter
+  );
+
+  const handleFrameSelect = (frameId: string) => {
+    dispatch({ type: 'SELECT', id: frameId });
+    onSelectFrame(frameId);
+  };
 
   useEffect(() => {
     // Request camera permission on mount
@@ -99,6 +147,79 @@ export function IdleView({ onStart }: IdleViewProps) {
               </Button>
             </div>
           )}
+        </div>
+
+        {/* Frame Selection Section */}
+        <div className="mt-8 space-y-4 max-w-5xl mx-auto">
+          <h2 className="text-3xl font-semibold">Choose Your Frame</h2>
+
+          {/* Orientation Filter */}
+          <div className="flex justify-center gap-2">
+            {(['all', 'vertical', 'horizontal'] as const).map((filter) => (
+              <Button
+                key={filter}
+                variant="outline"
+                size="sm"
+                onClick={() => dispatch({ type: 'FILTER', orientation: filter })}
+                className={cn(
+                  'capitalize border-2 transition-all',
+                  selectorState.orientationFilter === filter
+                    ? 'bg-white text-purple-600 border-white hover:bg-white'
+                    : 'bg-transparent text-white border-white/50 hover:bg-white/20 hover:border-white'
+                )}
+              >
+                {filter}
+              </Button>
+            ))}
+          </div>
+
+          {/* Frame Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
+            {frames.map((frame) => (
+              <button
+                key={frame.id}
+                onClick={() => handleFrameSelect(frame.id)}
+                onMouseEnter={() => dispatch({ type: 'HOVER', id: frame.id })}
+                onMouseLeave={() => dispatch({ type: 'HOVER', id: null })}
+                className={cn(
+                  'relative p-2 rounded-lg border-4 transition-all duration-200',
+                  'hover:scale-105 hover:shadow-xl',
+                  selectorState.selectedId === frame.id
+                    ? 'border-yellow-400 bg-white/20 shadow-2xl'
+                    : 'border-white/30 bg-white/10'
+                )}
+              >
+                {/* Frame Preview */}
+                <div className="aspect-[3/4] bg-white rounded overflow-hidden">
+                  <img
+                    src={frame.path}
+                    alt={frame.name}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+
+                {/* Frame Name */}
+                <p className="mt-2 text-sm font-medium">{frame.name}</p>
+
+                {/* Orientation Badge */}
+                <span
+                  className={cn(
+                    'absolute top-4 right-4 px-2 py-1 text-xs rounded-full font-semibold',
+                    frame.orientation === 'vertical' ? 'bg-blue-500' : 'bg-purple-500'
+                  )}
+                >
+                  {frame.orientation === 'vertical' ? '↕' : '↔'}
+                </span>
+
+                {/* Selected Indicator */}
+                {selectorState.selectedId === frame.id && (
+                  <div className="absolute top-2 left-2 text-2xl bg-yellow-400 rounded-full w-8 h-8 flex items-center justify-center text-purple-600">
+                    ✓
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="mt-12">

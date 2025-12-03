@@ -7,6 +7,7 @@ import { boothMachine } from '~/machines/boothMachine';
 import { stitchPhotos } from '~/lib/canvas-stitcher';
 import { uploadToCloudinary } from '~/lib/cloudinary-upload';
 import { generateBeepSound, generateShutterSound } from '~/lib/audio-utils';
+import type { FrameConfig } from '~/lib/frame-config';
 import { IdleView } from './views/IdleView';
 import { CountdownView } from './views/CountdownView';
 import { CaptureView } from './views/CaptureView';
@@ -26,8 +27,16 @@ export function BoothContainer() {
     boothMachine.provide({
       actors: {
         stitchPhotos: fromPromise(async ({ input }) => {
-          const { images, frameUrl } = input as { images: string[]; frameUrl: string };
-          return await stitchPhotos(images, frameUrl);
+          const { images, frameConfig } = input as {
+            images: string[];
+            frameConfig: FrameConfig;
+          };
+          console.log('🎨 STITCH SERVICE - Received images:', images.length);
+          console.log('🎨 STITCH SERVICE - Images data:', images.map(img => img.substring(0, 50) + '...'));
+          console.log('🎨 STITCH SERVICE - Frame config:', frameConfig);
+          const result = await stitchPhotos(images, frameConfig);
+          console.log('🎨 STITCH SERVICE - Result blob size:', result.size);
+          return result;
         }),
         uploadToCloudinary: fromPromise(async ({ input }) => {
           const { blob, cloudName, uploadPreset } = input as {
@@ -161,8 +170,9 @@ export function BoothContainer() {
         }
       };
 
-      // Wait for flash animation, then start capture attempts
-      const timer = setTimeout(attemptCapture, 300);
+      // Wait longer for webcam to be fully ready after state transition
+      // The webcam remounts when transitioning from countdown to capture
+      const timer = setTimeout(attemptCapture, 600);
 
       return () => clearTimeout(timer);
     }
@@ -171,7 +181,11 @@ export function BoothContainer() {
   // Render appropriate view based on state using pattern matching
   return match(state.value)
     .with('idle', () => (
-      <IdleView onStart={() => send({ type: 'START' })} />
+      <IdleView
+        onStart={() => send({ type: 'START' })}
+        onSelectFrame={(frameId: string) => send({ type: 'SELECT_FRAME', frameId })}
+        selectedFrameId={state.context.selectedFrameId}
+      />
     ))
     .with('countdown', () => (
       <CountdownView
@@ -196,14 +210,19 @@ export function BoothContainer() {
     .with('uploading', () => (
       <ProcessingView message="Uploading your photos..." />
     ))
-    .with('success', () => (
-      <SuccessView
-        uploadUrl={state.context.uploadUrl!}
-        publicId={state.context.publicId!}
-        images={state.context.images}
-        onReset={() => send({ type: 'RESET' })}
-      />
-    ))
+    .with('success', () => {
+      console.log('✅ SUCCESS VIEW - Upload URL:', state.context.uploadUrl);
+      console.log('✅ SUCCESS VIEW - Images count:', state.context.images.length);
+      console.log('✅ SUCCESS VIEW - Images preview:', state.context.images.map(img => img.substring(0, 50) + '...'));
+      return (
+        <SuccessView
+          uploadUrl={state.context.uploadUrl!}
+          publicId={state.context.publicId!}
+          images={state.context.images}
+          onReset={() => send({ type: 'RESET' })}
+        />
+      );
+    })
     .with('failure', () => (
       <FailureView
         error={state.context.error || 'An unknown error occurred'}

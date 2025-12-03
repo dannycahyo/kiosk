@@ -10,29 +10,39 @@ interface SuccessViewProps {
   onReset: () => void;
 }
 
-export function SuccessView({ uploadUrl, publicId, images, onReset }: SuccessViewProps) {
+export function SuccessView({
+  uploadUrl,
+  publicId,
+  images,
+  onReset,
+}: SuccessViewProps) {
   // Detect image orientation
-  const [imageOrientation, setImageOrientation] = useState<'vertical' | 'horizontal'>('vertical');
+  const [imageOrientation, setImageOrientation] = useState<
+    'vertical' | 'horizontal'
+  >('vertical');
 
   useEffect(() => {
     const img = new Image();
     img.onload = () => {
-      setImageOrientation(img.width > img.height ? 'horizontal' : 'vertical');
+      setImageOrientation(
+        img.width > img.height ? 'horizontal' : 'vertical',
+      );
     };
     img.src = uploadUrl;
   }, [uploadUrl]);
 
-  // Construct the retrieval URL
-  const retrievalUrl = `${window.location.origin}/photo/${encodeURIComponent(publicId)}`;
+  // Construct the retrieval URL using base URL from env or production default
+  const baseUrl = import.meta.env.VITE_BASE_URL || '';
+  const retrievalUrl = `${baseUrl}/photo/${encodeURIComponent(
+    publicId,
+  )}`;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-green-500 to-blue-600 text-white p-8">
       <div className="text-center space-y-8 max-w-4xl">
         <div className="space-y-4">
           <div className="text-6xl">✓</div>
-          <h2 className="text-5xl font-bold">
-            All Done!
-          </h2>
+          <h2 className="text-5xl font-bold">All Done!</h2>
           <p className="text-2xl text-green-100">
             Your photo strip is ready
           </p>
@@ -41,13 +51,18 @@ export function SuccessView({ uploadUrl, publicId, images, onReset }: SuccessVie
         {/* Display all 3 captured photos */}
         <div className="flex justify-center gap-4 flex-wrap">
           {images.map((image, index) => (
-            <div key={index} className="bg-white p-3 rounded-lg shadow-2xl">
+            <div
+              key={index}
+              className="bg-white p-3 rounded-lg shadow-2xl"
+            >
               <img
                 src={image}
                 alt={`Photo ${index + 1}`}
                 className="w-48 h-auto rounded shadow-lg"
               />
-              <p className="text-gray-700 text-sm mt-2 font-semibold">Photo {index + 1}</p>
+              <p className="text-gray-700 text-sm mt-2 font-semibold">
+                Photo {index + 1}
+              </p>
             </div>
           ))}
         </div>
@@ -56,19 +71,25 @@ export function SuccessView({ uploadUrl, publicId, images, onReset }: SuccessVie
         <div
           className={cn(
             'flex justify-center items-start gap-8 flex-wrap',
-            imageOrientation === 'horizontal' ? 'flex-col items-center' : ''
+            imageOrientation === 'horizontal'
+              ? 'flex-col items-center'
+              : '',
           )}
         >
           {/* Final stitched photo strip */}
           <div className="flex flex-col items-center">
-            <h3 className="text-2xl font-semibold mb-4">Final Photo Strip</h3>
+            <h3 className="text-2xl font-semibold mb-4">
+              Final Photo Strip
+            </h3>
             <div className="bg-white p-4 rounded-lg shadow-2xl">
               <img
                 src={uploadUrl}
                 alt="Your photo strip"
                 className={cn(
                   'rounded shadow-lg',
-                  imageOrientation === 'vertical' ? 'w-64 h-auto' : 'h-64 w-auto'
+                  imageOrientation === 'vertical'
+                    ? 'w-64 h-auto'
+                    : 'h-64 w-auto',
                 )}
               />
             </div>
@@ -76,7 +97,9 @@ export function SuccessView({ uploadUrl, publicId, images, onReset }: SuccessVie
 
           {/* QR Code with Instructions and Button */}
           <div className="flex flex-col items-center">
-            <h3 className="text-2xl font-semibold mb-4">Scan to Download</h3>
+            <h3 className="text-2xl font-semibold mb-4">
+              Scan to Download
+            </h3>
             <div className="bg-white p-8 rounded-2xl shadow-2xl">
               <div className="mb-4">
                 <p className="text-gray-600 text-center">

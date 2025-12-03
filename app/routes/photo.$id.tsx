@@ -58,19 +58,19 @@ export default function PhotoRetrieval() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 to-blue-900 flex flex-col items-center justify-center p-4">
-      <div className="max-w-lg w-full space-y-6">
+      <div className="max-w-4xl w-full space-y-6">
         {/* Header */}
         <div className="text-center text-white space-y-2">
           <h1 className="text-4xl font-bold">Your Photo Strip</h1>
           <p className="text-xl text-blue-200">Snap & Go Photobooth</p>
         </div>
 
-        {/* Photo Display */}
+        {/* Photo Display - responsive container for variable dimensions */}
         <div className="bg-white p-4 rounded-2xl shadow-2xl">
           <img
             src={imageUrl}
             alt="Your photobooth strip"
-            className="w-full h-auto rounded-lg shadow-lg"
+            className="w-full h-auto rounded-lg shadow-lg max-h-screen object-contain"
             onError={(e) => {
               e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTA4MCIgaGVpZ2h0PSIxOTIwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDA lIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNlZWUiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1zaXplPSI0OCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+SW1hZ2UgTm90IEZvdW5kPC90ZXh0Pjwvc3ZnPg==';
             }}
