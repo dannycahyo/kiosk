@@ -66,11 +66,6 @@ export async function stitchPhotos(
   images: string[],
   frameConfig: FrameConfig
 ): Promise<Blob> {
-  console.log('🖼️ STITCHER START');
-  console.log('  Images received:', images.length);
-  console.log('  Images valid?:', images.every(img => img.startsWith('data:image/')));
-  console.log('  Frame config:', frameConfig.id, frameConfig.width, 'x', frameConfig.height);
-
   if (images.length !== 3) {
     throw new Error(`Expected 3 images, got ${images.length}`);
   }
@@ -79,7 +74,6 @@ export async function stitchPhotos(
   const canvas = document.createElement('canvas');
   canvas.width = frameConfig.width;
   canvas.height = frameConfig.height;
-  console.log('  Canvas created:', canvas.width, 'x', canvas.height);
 
   const ctx = canvas.getContext('2d', { alpha: true }); // Enable alpha for transparency
   if (!ctx) {
@@ -88,18 +82,14 @@ export async function stitchPhotos(
 
   try {
     // Load all images in parallel
-    console.log('  Loading frame and photos...');
     const [frameImage, ...photoImages] = await Promise.all([
       loadImage(frameConfig.path),
       ...images.map(loadImage),
     ]);
-    console.log('  Frame loaded:', frameImage.width, 'x', frameImage.height);
-    console.log('  Photos loaded:', photoImages.map(p => `${p.width}x${p.height}`));
 
     // STEP 1: Draw frame as background
     ctx.globalCompositeOperation = 'source-over';
     ctx.drawImage(frameImage, 0, 0, frameConfig.width, frameConfig.height);
-    console.log('  ✓ Frame drawn as background');
 
     // STEP 2: Draw photos ON TOP of frame at slot positions
     // Photos will completely override/cover the frame at slot areas
@@ -108,11 +98,6 @@ export async function stitchPhotos(
     for (let i = 0; i < 3; i++) {
       const photo = photoImages[i];
       const slot = frameConfig.photoSlots[i];
-
-      console.log(`  Drawing photo ${i + 1} on top:`, {
-        photoSize: `${photo.width}x${photo.height}`,
-        slot: `x:${slot.x} y:${slot.y} w:${slot.width} h:${slot.height}`
-      });
 
       // Calculate crop to fit slot while maintaining aspect ratio
       const { sx, sy, sWidth, sHeight } = calculateCrop(
@@ -134,10 +119,7 @@ export async function stitchPhotos(
         slot.width,
         slot.height // Destination slot
       );
-      console.log(`  ✓ Photo ${i + 1} drawn on top`);
     }
-
-    console.log('  Converting to blob...');
     // Convert to blob
     return new Promise<Blob>((resolve, reject) => {
       canvas.toBlob(

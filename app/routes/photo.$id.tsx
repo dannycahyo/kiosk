@@ -47,7 +47,7 @@ export default function PhotoRetrieval() {
           url: window.location.href,
         });
       } catch (error) {
-        console.error('Error sharing:', error);
+        // Ignore error
       }
     } else {
       // Fallback: copy URL to clipboard

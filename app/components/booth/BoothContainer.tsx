@@ -31,12 +31,7 @@ export function BoothContainer() {
             images: string[];
             frameConfig: FrameConfig;
           };
-          console.log('🎨 STITCH SERVICE - Received images:', images.length);
-          console.log('🎨 STITCH SERVICE - Images data:', images.map(img => img.substring(0, 50) + '...'));
-          console.log('🎨 STITCH SERVICE - Frame config:', frameConfig);
-          const result = await stitchPhotos(images, frameConfig);
-          console.log('🎨 STITCH SERVICE - Result blob size:', result.size);
-          return result;
+          return await stitchPhotos(images, frameConfig);
         }),
         uploadToCloudinary: fromPromise(async ({ input }) => {
           const { blob, cloudName, uploadPreset } = input as {
@@ -52,9 +47,8 @@ export function BoothContainer() {
 
   // Handle webcam ready
   const handleWebcamReady = useCallback(() => {
-    console.log('Webcam initialized successfully in state:', state.value);
     webcamReadyRef.current = true;
-  }, [state.value]);
+  }, []);
 
   // Initialize audio on mount
   useEffect(() => {
@@ -69,7 +63,7 @@ export function BoothContainer() {
       beepAudioRef.current.load();
       shutterAudioRef.current.load();
     } catch (error) {
-      console.error('Failed to generate audio:', error);
+      // Ignore error
     }
 
     return () => {
@@ -80,10 +74,8 @@ export function BoothContainer() {
 
   // Reset webcam ready flag on state transitions
   useEffect(() => {
-    console.log('State changed to:', state.value);
     // Reset webcam ready when entering countdown (new webcam instance)
     if (state.matches('countdown')) {
-      console.log('Resetting webcamReady flag for new countdown webcam');
       webcamReadyRef.current = false;
     }
   }, [state.value]);
@@ -92,7 +84,7 @@ export function BoothContainer() {
   useEffect(() => {
     if (state.matches('countdown')) {
       // Play beep sound
-      beepAudioRef.current?.play().catch(console.error);
+      beepAudioRef.current?.play().catch(() => {});
 
       // Start countdown tick interval
       let tickCount = 0;
@@ -100,7 +92,7 @@ export function BoothContainer() {
         tickCount++;
         if (tickCount < 3) {
           send({ type: 'COUNTDOWN_TICK' });
-          beepAudioRef.current?.play().catch(console.error);
+          beepAudioRef.current?.play().catch(() => {});
         }
       }, 1000);
 
@@ -114,27 +106,19 @@ export function BoothContainer() {
 
   // Capture photo callback
   const capturePhoto = useCallback(() => {
-    console.log('Attempting capture - webcamReady:', webcamReadyRef.current, 'webcamRef:', !!webcamRef.current);
-
     try {
       if (!webcamRef.current) {
-        console.error('webcamRef.current is null');
         throw new Error('Webcam ref is null');
       }
 
-      console.log('About to call getScreenshot()');
       const screenshot = webcamRef.current.getScreenshot();
-
-      console.log('getScreenshot() returned:', screenshot ? `data (${screenshot.length} chars)` : 'null');
 
       if (!screenshot) {
         throw new Error('Screenshot returned null - check camera permissions');
       }
 
-      console.log('Photo captured successfully, size:', screenshot.length);
       return screenshot;
     } catch (error) {
-      console.error('Capture error:', error);
       throw error;
     }
   }, []);
@@ -143,7 +127,7 @@ export function BoothContainer() {
   useEffect(() => {
     if (state.matches('capture')) {
       // Play shutter sound
-      shutterAudioRef.current?.play().catch(console.error);
+      shutterAudioRef.current?.play().catch(() => {});
 
       let attempts = 0;
       const maxAttempts = 5;
@@ -151,17 +135,14 @@ export function BoothContainer() {
       // Retry capture if needed (video might not be ready immediately)
       const attemptCapture = () => {
         attempts++;
-        console.log(`Capture attempt ${attempts}/${maxAttempts}`);
 
         try {
           const screenshot = capturePhoto();
           send({ type: 'CAPTURE_DONE', image: screenshot });
         } catch (error) {
           if (attempts < maxAttempts) {
-            console.log('Retrying capture in 100ms...');
             setTimeout(attemptCapture, 100);
           } else {
-            console.error('All capture attempts failed');
             send({
               type: 'CAPTURE_ERROR',
               error: error instanceof Error ? error.message : 'Failed to capture photo'
@@ -210,19 +191,14 @@ export function BoothContainer() {
     .with('uploading', () => (
       <ProcessingView message="Uploading your photos..." />
     ))
-    .with('success', () => {
-      console.log('✅ SUCCESS VIEW - Upload URL:', state.context.uploadUrl);
-      console.log('✅ SUCCESS VIEW - Images count:', state.context.images.length);
-      console.log('✅ SUCCESS VIEW - Images preview:', state.context.images.map(img => img.substring(0, 50) + '...'));
-      return (
-        <SuccessView
-          uploadUrl={state.context.uploadUrl!}
-          publicId={state.context.publicId!}
-          images={state.context.images}
-          onReset={() => send({ type: 'RESET' })}
-        />
-      );
-    })
+    .with('success', () => (
+      <SuccessView
+        uploadUrl={state.context.uploadUrl!}
+        publicId={state.context.publicId!}
+        images={state.context.images}
+        onReset={() => send({ type: 'RESET' })}
+      />
+    ))
     .with('failure', () => (
       <FailureView
         error={state.context.error || 'An unknown error occurred'}

@@ -13,16 +13,10 @@ export function measureFrameSlots(imagePath: string): void {
   const img = new Image();
 
   img.onerror = () => {
-    console.error(`Failed to load image: ${imagePath}`);
+    // Ignore error
   };
 
   img.onload = () => {
-    console.log(`Loaded frame: ${imagePath}`);
-    console.log(`Dimensions: ${img.width}×${img.height}px`);
-    console.log('\nClick to mark photo slot corners:');
-    console.log('- Slot 1: Click top-left, then bottom-right');
-    console.log('- Slot 2: Click top-left, then bottom-right');
-    console.log('- Slot 3: Click top-left, then bottom-right');
 
     // Create overlay
     const overlay = document.createElement('div');
@@ -122,23 +116,6 @@ export function measureFrameSlots(imagePath: string): void {
 
       // After 6 clicks, output results
       if (markers.length === 6) {
-        console.log('\n========================================');
-        console.log('PHOTO SLOT COORDINATES');
-        console.log('========================================\n');
-        console.log('Copy this to frame-config.ts:\n');
-        console.log('photoSlots: [');
-
-        for (let i = 0; i < 3; i++) {
-          const topLeft = markers[i * 2];
-          const bottomRight = markers[i * 2 + 1];
-          const width = bottomRight.x - topLeft.x;
-          const height = bottomRight.y - topLeft.y;
-
-          console.log(`  { x: ${topLeft.x}, y: ${topLeft.y}, width: ${width}, height: ${height} }, // Slot ${i + 1}`);
-        }
-
-        console.log('],\n');
-        console.log('========================================\n');
 
         // Cleanup after short delay
         setTimeout(() => {

@@ -33,5 +33,3 @@ const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 
 const outputPath = path.join(__dirname, '../public/assets/frame.svg');
 fs.writeFileSync(outputPath, svgContent);
-console.log('Frame SVG created at:', outputPath);
-console.log('Note: For production, convert this SVG to PNG (1080x1920) using an image tool.');

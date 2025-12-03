@@ -70,9 +70,7 @@ export function IdleView({ onStart, onSelectFrame, selectedFrameId }: IdleViewPr
         // Permission granted - stop the stream immediately
         stream.getTracks().forEach((track) => track.stop());
         setCameraStatus('granted');
-        console.log('Camera permission granted');
       } catch (error) {
-        console.error('Camera permission error:', error);
         setCameraStatus('denied');
 
         if (error instanceof Error) {
