@@ -19,8 +19,8 @@ export function CountdownView({ countdown, webcamRef, currentPhotoNumber, onWebc
           screenshotFormat="image/jpeg"
           screenshotQuality={0.92}
           videoConstraints={{
-            width: 1080,
-            height: 1920,
+            width: 1920,
+            height: 1080,
             facingMode: 'user',
           }}
           mirrored={true}
