@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '~/components/ui/button';
+import { cn } from '~/lib/utils';
 
 interface SuccessViewProps {
   uploadUrl: string;
@@ -9,6 +11,17 @@ interface SuccessViewProps {
 }
 
 export function SuccessView({ uploadUrl, publicId, images, onReset }: SuccessViewProps) {
+  // Detect image orientation
+  const [imageOrientation, setImageOrientation] = useState<'vertical' | 'horizontal'>('vertical');
+
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      setImageOrientation(img.width > img.height ? 'horizontal' : 'vertical');
+    };
+    img.src = uploadUrl;
+  }, [uploadUrl]);
+
   // Construct the retrieval URL
   const retrievalUrl = `${window.location.origin}/photo/${encodeURIComponent(publicId)}`;
 
@@ -39,8 +52,13 @@ export function SuccessView({ uploadUrl, publicId, images, onReset }: SuccessVie
           ))}
         </div>
 
-        {/* Photo Strip and QR Code side by side */}
-        <div className="flex justify-center items-start gap-8 flex-wrap">
+        {/* Photo Strip and QR Code - responsive layout based on orientation */}
+        <div
+          className={cn(
+            'flex justify-center items-start gap-8 flex-wrap',
+            imageOrientation === 'horizontal' ? 'flex-col items-center' : ''
+          )}
+        >
           {/* Final stitched photo strip */}
           <div className="flex flex-col items-center">
             <h3 className="text-2xl font-semibold mb-4">Final Photo Strip</h3>
@@ -48,12 +66,15 @@ export function SuccessView({ uploadUrl, publicId, images, onReset }: SuccessVie
               <img
                 src={uploadUrl}
                 alt="Your photo strip"
-                className="w-64 h-auto rounded shadow-lg"
+                className={cn(
+                  'rounded shadow-lg',
+                  imageOrientation === 'vertical' ? 'w-64 h-auto' : 'h-64 w-auto'
+                )}
               />
             </div>
           </div>
 
-          {/* QR Code */}
+          {/* QR Code with Instructions and Button */}
           <div className="flex flex-col items-center">
             <h3 className="text-2xl font-semibold mb-4">Scan to Download</h3>
             <div className="bg-white p-8 rounded-2xl shadow-2xl">
@@ -69,26 +90,26 @@ export function SuccessView({ uploadUrl, publicId, images, onReset }: SuccessVie
                 includeMargin={true}
               />
             </div>
+
+            {/* Instructions below QR code */}
+            <div className="mt-6 space-y-2 text-lg text-green-100">
+              <p>📱 Open your phone camera</p>
+              <p>📸 Point at the QR code</p>
+              <p>💾 Download your photo strip</p>
+            </div>
+
+            {/* Start New Session button */}
+            <div className="mt-6">
+              <Button
+                onClick={onReset}
+                size="lg"
+                variant="outline"
+                className="text-xl px-8 py-6 bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-2 border-white rounded-full"
+              >
+                Start New Session
+              </Button>
+            </div>
           </div>
-        </div>
-
-        {/* Instructions */}
-        <div className="space-y-2 text-lg text-green-100">
-          <p>📱 Open your phone camera</p>
-          <p>📸 Point at the QR code</p>
-          <p>💾 Download your photo strip</p>
-        </div>
-
-        {/* Reset button */}
-        <div className="pt-8">
-          <Button
-            onClick={onReset}
-            size="lg"
-            variant="outline"
-            className="text-xl px-8 py-6 bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-2 border-white rounded-full"
-          >
-            Start New Session
-          </Button>
         </div>
 
         <p className="text-sm text-green-200 opacity-75">
